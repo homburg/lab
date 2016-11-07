@@ -23,8 +23,8 @@ type config struct {
 }
 
 // Create action for a particular merge request, defaulting to the current (by branch)
-func createActionForMergeRequest(callback func(gitlab, string, mergeRequest) error) func(*cli.Context) {
-	return func(c *cli.Context) {
+func createActionForMergeRequest(callback func(gitlab, string, mergeRequest) error) func(*cli.Context) error {
+	return func(c *cli.Context) error {
 		server := needGitlab(c)
 		remoteUrl := needRemoteUrl(c)
 		gitDir := needGitDir(c)
@@ -47,7 +47,7 @@ func createActionForMergeRequest(callback func(gitlab, string, mergeRequest) err
 					if err != nil {
 						log.Fatal(err)
 					}
-					return
+					return nil
 				}
 			}
 
@@ -65,11 +65,12 @@ func createActionForMergeRequest(callback func(gitlab, string, mergeRequest) err
 				if err != nil {
 					log.Fatal(err)
 				}
-				return
+				return nil
 			}
 		}
 
 		log.Fatalf("Could not find merge request for branch: %s on project %s\n", currentBranch, remoteUrl.path)
+		return nil
 	}
 }
 
@@ -297,18 +298,19 @@ func main() {
 			Name:  "browse",
 			Usage: "Open project homepage",
 			Flags: flags,
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				server := needGitlab(c)
 				remote := needRemoteUrl(c)
 				addr := server.getProjectUrl(remote.path)
 				browse(addr)
+				return nil
 			},
 		},
 		{
 			Name:  "feed",
 			Usage: "Get your GitLab feed",
 			Flags: flags,
-			Action: func(c *cli.Context) {
+			Action: func(c *cli.Context) error {
 				server := needGitlab(c)
 				token := needToken(c)
 				server.token = token
@@ -368,7 +370,7 @@ func main() {
 					}
 				}
 
-				return
+				return nil
 			},
 		},
 		{
@@ -381,7 +383,7 @@ func main() {
 					ShortName: "c",
 					Usage:     "Create merge request, default target branch: master.",
 					Flags:     flags,
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						server := needGitlab(c)
 						token := needToken(c)
 						server.token = token
@@ -414,6 +416,7 @@ func main() {
 						addr := server.getMergeRequestUrl(remoteUrl.path, createdMergeRequest.Iid)
 						log.Println("Created merge request:", addr)
 						browse(addr)
+						return nil
 					},
 				},
 				{
@@ -451,7 +454,7 @@ func main() {
 					Name:  "diff",
 					Usage: "Diff current merge request or by ID.",
 					Flags: mergeRequestFlags,
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						server := needGitlab(c)
 						remoteUrl := needRemoteUrl(c)
 						gitDir := needGitDir(c)
@@ -471,7 +474,7 @@ func main() {
 								if request.Iid == mergeRequestId {
 									gitDir.diff2(request.TargetBranch, request.SourceBranch)
 									browse(server.getMergeRequestUrl(remoteUrl.path, mergeRequestId))
-									return
+									return nil
 								}
 							}
 
@@ -486,26 +489,28 @@ func main() {
 						for _, request := range mergeRequests {
 							if request.SourceBranch == currentBranch {
 								gitDir.diff2(request.TargetBranch, request.SourceBranch)
-								return
+								return nil
 							}
 						}
 
 						log.Fatalf("Could not find merge request for branch: %s on project %s\n", currentBranch, remoteUrl.path)
+						return nil
 					},
 				},
 				{
 					Name:  "pick-diff",
 					Usage: "Pick diff from merge requests",
 					Flags: mergeRequestFlags,
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						gitDir := needGitDir(c)
 
 						request := promptForMergeRequest(c)
 						if nil == request {
-							return
+							return nil
 						}
 
 						gitDir.diff2(request.TargetBranch, request.SourceBranch)
+						return nil
 					},
 				},
 				{
@@ -513,7 +518,7 @@ func main() {
 					ShortName: "l",
 					Usage:     "List merge requests",
 					Flags:     mergeRequestFlags,
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						mergeRequests, err := needMergeRequests(c)
 						if nil != err {
 							log.Fatal(err)
@@ -526,7 +531,7 @@ func main() {
 
 						if format == "help" {
 							fmt.Println(MergeRequestListTemplate)
-							return
+							return nil
 						}
 
 						tmpl, err := newTemplate("default-merge-request", format, doColors(os.Stdout))
@@ -548,6 +553,7 @@ func main() {
 						if nil != err {
 							log.Fatal(err)
 						}
+						return nil
 					},
 				},
 				{
@@ -555,10 +561,10 @@ func main() {
 					ShortName: "co",
 					Usage:     "Checkout branch from merge request",
 					Flags:     mergeRequestFlags,
-					Action: func(c *cli.Context) {
+					Action: func(c *cli.Context) error {
 						mergeRequest := promptForMergeRequest(c)
 						if mergeRequest == nil {
-							return
+							return nil
 						}
 						fmt.Printf("Checkout out: \"%s\"...", mergeRequest.SourceBranch)
 						gitDir := needGitDir(c)
@@ -567,6 +573,7 @@ func main() {
 						if nil != err {
 							log.Fatal(err)
 						}
+						return nil
 					},
 				},
 			},
