@@ -95,7 +95,7 @@ func promptForMergeRequest(c *cli.Context) *mergeRequest {
 		log.Fatal(err)
 	}
 	for i, request := range mergeRequests {
-		fmt.Fprintf(os.Stderr, color.RedString("%%d: "), i)
+		os.Stderr.WriteString(color.RedString("%d: ", i))
 		err = tmpl.Execute(os.Stderr, request)
 		if err != nil {
 			log.Fatal(err)
