@@ -23,9 +23,10 @@ type mergeRequest struct {
 }
 
 type mergeRequestCreateRequest struct {
-	SourceBranch string `json:"source_branch"`
-	TargetBranch string `json:"target_branch"`
-	Title        string `json:"title"`
+	SourceBranch       string `json:"source_branch"`
+	TargetBranch       string `json:"target_branch"`
+	Title              string `json:"title"`
+	RemoveSourceBranch bool   `json:"remove_source_branch"`
 }
 
 type session struct {
@@ -148,9 +149,10 @@ func (g gitlab) getUnauthOpaqueApiUrl(pathSegments ...string) string {
 
 func (g gitlab) createMergeRequest(projectId, sourceBranch, targetBranch, title string) (*mergeRequest, error) {
 	requestBody := mergeRequestCreateRequest{
-		SourceBranch: sourceBranch,
-		TargetBranch: targetBranch,
-		Title:        title,
+		SourceBranch:       sourceBranch,
+		TargetBranch:       targetBranch,
+		Title:              title,
+		RemoveSourceBranch: true,
 	}
 
 	buffer := &bytes.Buffer{}
